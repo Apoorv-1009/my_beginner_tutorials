@@ -92,5 +92,9 @@ cpplint --filter=-build/c++11,+build/c++17,-build/namespaces,-build/include_orde
 
 Run clang tidy for diagnosing and fixing common issues:
 ```bash
-clang-tidy -extra-arg=-std=c++17 src/*.cpp > results/clangtidy_output.txt
+clang-tidy -extra-arg=-std=c++17 src/*.cpp
+```
+You can save the output with:
+```bash
+echo $? > results/clangtidy_output.txt
 ```
