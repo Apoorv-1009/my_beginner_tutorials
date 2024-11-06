@@ -84,8 +84,13 @@ Run cppcheck for code analysis:
 cppcheck --enable=all --std=c++17 --suppress=missingIncludeSystem $(find . -name "*.cpp" | grep -vE -e "^./build/") --check-config > results/cppcheck_output.txt
 ```
 
-Lastly, run cpplint for style checking:
+Run cpplint for style checking:
 
 ```bash
 cpplint --filter=-build/c++11,+build/c++17,-build/namespaces,-build/include_order src/*.cpp > results/cpplint.txt
+```
+
+Run clang tidy for diagnosing and fixing common issues:
+```bash
+clang-tidy -extra-arg=-std=c++17 src/*.cpp > results/clangtidy_output.txt
 ```
