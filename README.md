@@ -1,3 +1,5 @@
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 # ROS 2 Beginner Tutorials - ENPM700
 
 This repository features the publisher-subscriber package developed for the ROS 2 beginner tutorials as part of the ENPM700 course. This project was created by **Apoorv Thapliyal** for the course *ENPM700: Software Development for Robotics* at the University of Maryland.
@@ -63,11 +65,19 @@ To start the publisher, open a terminal and run the following command:
 ```bash
 ros2 run beginner_tutorials talker
 ```
+The publisher contains the service, you can alter the publish frequency with the following command:
+```bash
+ros2 run beginner_tutorials talker --ros-args -p publish_frequency:=100
+```
+</br>
 
 Then, in a new terminal (make sure to source ROS2 and the workspace setup again), start the subscriber with:
-
 ```bash
 ros2 run beginner_tutorials listener
+```
+To change the output string of the talker, you can run the following command:
+```bash
+ros2 run beginner_tutorials listener --ros-args -p new_message:="Hi"
 ```
 
 ### Style Check Guidelines
@@ -87,7 +97,7 @@ cppcheck --enable=all --std=c++17 --suppress=missingIncludeSystem $(find . -name
 Run cpplint for style checking:
 
 ```bash
-cpplint --filter=-build/c++11,+build/c++17,-build/namespaces,-build/include_order src/*.cpp > results/cpplint.txt
+cpplint --filter=-build/c++11,+build/c++17,-build/namespaces,-build/include_order src/*.cpp > results/cpplint_output.txt
 ```
 
 Run clang tidy for diagnosing and fixing common issues:

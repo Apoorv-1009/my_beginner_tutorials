@@ -1,90 +1,155 @@
 /**
- * @file pub.cpp
+ * @file publisher_function.cpp
  * @author Apoorv Thapliyal
- * @brief C++ source file for the ROS2 publisher node.
+ * @brief C++ file for the ROS2 publisher node with a service to change the
+ * published message
  * @version 0.1
- * @date 2024-11-05
- * 
+ * @date 2024-11-07
+ *
  * @copyright Copyright (c) 2024
- * 
  */
 
 #include <chrono>
+#include <cstddef>
 #include <functional>
 #include <memory>
+#include <rclcpp/logging.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <string>
 
+#include "beginner_tutorials/srv/change_output_string.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
 
 /**
- * @class MinimalPublisher
- * @brief A minimal ROS2 publisher node that demonstrates basic publishing functionality.
+ * @brief Simple ROS2 node that publishes messages at a specified frequency
  *
- * This class implements a basic ROS2 node that publishes string messages
- * to a topic at regular intervals using a timer.
  */
-class MinimalPublisher : public rclcpp::Node {
+class MessagePublisherNode : public rclcpp::Node {
  public:
   /**
-   * @brief Constructor for MinimalPublisher
+   * @brief Constructor for the MessagePublisherNode
    *
-   * Initializes the publisher node with a name, creates a publisher
-   * for string messages, and sets up a timer for periodic publishing.
    */
-  MinimalPublisher()
-    : Node("minimal_publisher"), count_(0) {
-    publisher_ = this->create_publisher<std_msgs::msg::String>("topic", 10);
-    timer_ = this->create_wall_timer(
-      std::chrono::milliseconds(500),
-      std::bind(&MinimalPublisher::TimerCallback, this));
+  MessagePublisherNode() : Node("message_publisher"), message_count_(0) {
+    // Declare the parameter with a default value, without using `as_int()` yet
+    this->declare_parameter<int>("publish_frequency", 500);
+
+    // Retrieve the parameter value, using 500 as a fallback if it's not set
+    int publish_frequency;
+    this->get_parameter_or("publish_frequency", publish_frequency, 500);
+
+    // Fatal check for negative frequency
+    if (publish_frequency < 0) {
+      RCLCPP_FATAL_STREAM(this->get_logger(),
+                          "Fatal error: Publish frequency cannot be negative");
+      rclcpp::shutdown();
+      std::exit(EXIT_FAILURE);
+    }
+
+    // Set default message
+    this->current_message_.data = "Apoorv Thapliyal";
+
+    // Create publisher
+    message_publisher_ =
+        this->create_publisher<std_msgs::msg::String>("topic", 10);
+
+    // Create service
+    message_service_ =
+        this->create_service<beginner_tutorials::srv::ChangeOutputString>(
+            "change_string",
+            std::bind(&MessagePublisherNode::handle_message_change, this,
+                      std::placeholders::_1, std::placeholders::_2));
+
+    // Check if default frequency is being used
+    if (publish_frequency == 500) {
+      RCLCPP_WARN_STREAM(
+          this->get_logger(),
+          "Publisher frequency is not changed: " << publish_frequency);
+    }
+
+    // Create timer for publishing
+    publish_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(publish_frequency),
+        std::bind(&MessagePublisherNode::publish_message, this));
   }
 
  private:
   /**
-   * @brief Timer callback function for periodic message publishing
-   *
-   * This function is called periodically by the timer and publishes
-   * a string message containing a counter value.
+   * @brief Callback function for the publishing timer
+   * @details Publishes the current message at the specified frequency
    */
-  void TimerCallback() {
-    auto message = std_msgs::msg::String();
-    message.data = "Apoorv Thapliyal " + std::to_string(count_++);
-    RCLCPP_INFO(
-      this->get_logger(),
-      "Publishing: '%s'", message.data.c_str());
-    publisher_->publish(message);
+  void publish_message() {
+    auto message = this->current_message_;
+    RCLCPP_INFO_STREAM(this->get_logger(), "Publishing: " << message.data);
+    message_publisher_->publish(message);
   }
 
   /**
-   * @brief timer_ member variable
-   * 
+   * @brief Service callback to modify the published message
+   * @param request The service request containing the new message
+   * @param response The service response confirming the change
    */
-  rclcpp::TimerBase::SharedPtr timer_;
+  void handle_message_change(
+      const std::shared_ptr<
+          beginner_tutorials::srv::ChangeOutputString::Request>
+          request,
+      std::shared_ptr<beginner_tutorials::srv::ChangeOutputString::Response>
+          response) {
+    if (request->new_string.empty()) {
+      RCLCPP_ERROR_STREAM(this->get_logger(),
+                          "Received empty message in service request. Keeping "
+                          "current message.");
+      response->output =
+          this->current_message_.data;  // Keep the current message as response
+    } else {
+      this->current_message_.data = request->new_string;
+      response->output = request->new_string;
+      RCLCPP_DEBUG_STREAM(this->get_logger(),
+                          "Received Service Request: " << request->new_string);
+    }
+  }
 
   /**
-   * @brief publisher_ member variable
-   * 
+   * @brief Current message to publish
+   *
    */
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
+  std_msgs::msg::String current_message_;
 
   /**
-  * @brief count_ member variable
-  * 
-  */ 
-  size_t count_;
+   * @brief Timer for publishing
+   *
+   */
+  rclcpp::TimerBase::SharedPtr publish_timer_;
+
+  /**
+   * @brief Message publisher
+   *
+   */
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr message_publisher_;
+
+  /**
+   * @brief Service to change message
+   *
+   */
+  rclcpp::Service<beginner_tutorials::srv::ChangeOutputString>::SharedPtr
+      message_service_;
+
+  /**
+   * @brief Message counter
+   *
+   */
+  size_t message_count_;
 };
 
 /**
- * @brief Main function for the publisher node
- *
+ * @brief Main function to initialize and run the node
  * @param argc Number of command line arguments
- * @param argv Array of command line arguments
- * @return int 0 on successful execution, non-zero otherwise
+ * @param argv Command line arguments
+ * @return Exit status
  */
 int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<MinimalPublisher>());
+  rclcpp::spin(std::make_shared<MessagePublisherNode>());
   rclcpp::shutdown();
   return 0;
 }

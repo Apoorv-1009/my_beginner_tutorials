@@ -1,0 +1,6 @@
+setup.py
+beginner_tutorials/__init__.py
+beginner_tutorials.egg-info/PKG-INFO
+beginner_tutorials.egg-info/SOURCES.txt
+beginner_tutorials.egg-info/dependency_links.txt
+beginner_tutorials.egg-info/top_level.txt
