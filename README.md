@@ -7,6 +7,10 @@ This repository features the publisher-subscriber package developed for the ROS 
 ### Project Dependencies
 This package relies on the ROS Humble Hawksbill distribution. Please ensure it is installed beforehand.  
 You can find the installation instructions [here](https://docs.ros.org/en/humble/Installation.html).
+Ensure to have empy==3.34 package installed:
+```bash
+pip install empy==3.3.4
+```
 
 ### Building the Project
 
@@ -28,7 +32,7 @@ Navigate to the source directory of your ROS2 workspace:
 cd ~/my_beginner_tutorials/src
 ```
 
-Clone the repository into your workspace:
+Clone the package into your workspace:
 
 ```bash
 git clone https://github.com/Apoorv-1009/my_beginner_tutorials.git
@@ -37,7 +41,7 @@ git clone https://github.com/Apoorv-1009/my_beginner_tutorials.git
 Once the repository is cloned, change back to the workspace directory:
 
 ```bash
-cd ~/ros_ws
+cd ~/my_beginner_tutorials
 ```
 
 Before building the package, install the necessary dependencies using rosdep:
@@ -60,6 +64,12 @@ source ./install/setup.bash
 
 ### Running the Nodes
 
+Make sure to checkout into the `ros_services_logging_launch` branch:
+```bash
+cd ~/my_beginner_tutorials/src/beginner_tutorials/
+git checkout ros_services_logging_launch
+```
+
 To start the publisher, open a terminal and run the following command:
 
 ```bash
@@ -75,7 +85,7 @@ Then, in a new terminal (make sure to source ROS2 and the workspace setup again)
 ```bash
 ros2 run beginner_tutorials listener
 ```
-To change the output string of the talker, you can run the following command:
+To change the output string of the `talker`, you can run the following command:
 ```bash
 ros2 run beginner_tutorials listener --ros-args -p new_message:="Hi"
 ```
