@@ -90,6 +90,12 @@ To change the output string of the `talker`, you can run the following command:
 ros2 run beginner_tutorials listener --ros-args -p new_message:="Hi"
 ```
 
+### Running the Launch file
+To start the talker and listener nodes directly, you can run the following command with an editable publish frequency and message:
+```bash
+ros2 launch beginner_tutorials publisher_subscriber.launch.py publish_frequency:=100 new_message:="Hello, Publisher"
+```
+
 ### Style Check Guidelines
 
 To maintain code quality, you can perform style checks using cppcheck and cpplint. First, navigate to the package directory:
