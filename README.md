@@ -96,6 +96,13 @@ To start the talker and listener nodes directly, you can run the following comma
 ros2 launch beginner_tutorials publisher_subscriber.launch.py publish_frequency:=100 new_message:="Hello, Publisher"
 ```
 
+### Viewing the logger levels
+After running the nodes, you can view the logger levels with this command:
+```bash
+ros2 run rqt_console rqt_console
+```
+A sample output screenshot has been provided under `/docs`
+
 ### Style Check Guidelines
 
 To maintain code quality, you can perform style checks using cppcheck and cpplint. First, navigate to the package directory:
