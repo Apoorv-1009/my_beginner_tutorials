@@ -1,0 +1,13 @@
+
+Files:             recorded_topics_0.db3
+Bag size:          59.2 KiB
+Storage id:        sqlite3
+Duration:          30.891829247s
+Start:             Nov 14 2024 10:47:19.873496540 (1731599239.873496540)
+End:               Nov 14 2024 10:47:50.765325787 (1731599270.765325787)
+Messages:          132
+Topic information: Topic: /events/write_split | Type: rosbag2_interfaces/msg/WriteSplitEvent | Count: 0 | Serialization Format: cdr
+                   Topic: /parameter_events | Type: rcl_interfaces/msg/ParameterEvent | Count: 0 | Serialization Format: cdr
+                   Topic: /rosout | Type: rcl_interfaces/msg/Log | Count: 70 | Serialization Format: cdr
+                   Topic: /tf | Type: tf2_msgs/msg/TFMessage | Count: 62 | Serialization Format: cdr
+

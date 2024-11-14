@@ -48,10 +48,16 @@
 class MessagePublisherNode : public rclcpp::Node {
 
   private:
-    // Declare the tf broadcaster
+    /**
+     * @brief tf broadcaster for the static tf frame
+     * 
+     */
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_static_broadcaster_;
 
-    // Declare the timer for the tf broadcast
+    /**
+     * @brief Timer for the tf broadcast
+     * 
+     */
     rclcpp::TimerBase::SharedPtr timer_;
 
 

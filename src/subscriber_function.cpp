@@ -3,7 +3,7 @@
  * @author Apoorv Thapliyal
  * @brief A simple ROS2 subscriber node implementation
  * @version 0.1
- * @date 2024-11-07
+ * @date 2024-14-07
  *
  * @copyright Copyright (c) 2024
  * @license MIT License
@@ -27,113 +27,81 @@
  * THE SOFTWARE.
  */
 
-#include <iostream>
-#include <memory>
 #include <rclcpp/logging.hpp>
-#include <std_msgs/msg/string.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <string>
 
-#include "beginner_tutorials/srv/change_output_string.hpp"
-#include "rclcpp/rclcpp.hpp"
+class TfSubscriberNode : public rclcpp::Node {
+private:
+    /**
+     * @brief tf buffer for the transform listener
+     * 
+     */
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 
-/**
- * @brief Class for the subscriber node
- *
- */
-class SubscriberNode : public rclcpp::Node {
- public:
-  /**
-   * @brief Constructor for the SubscriberNode
-   */
-  SubscriberNode() : Node("subscriber_node") {
-    // Create subscription to listen to the "topic"
-    subscription_ = this->create_subscription<std_msgs::msg::String>(
-        "topic", 10,
-        std::bind(&SubscriberNode::message_callback, this,
-                  std::placeholders::_1));
+    /**
+     * @brief tf listener for the transform
+     * 
+     */
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-    // Create a service client to interact with the publisher's change_string
-    // service
-    client_ = this->create_client<beginner_tutorials::srv::ChangeOutputString>(
-        "change_string");
+    /**
+     * @brief Timer to periodically check for the transform
+     * 
+     */
+    rclcpp::TimerBase::SharedPtr timer_;
 
-    // Wait for the service to be available
-    while (!client_->wait_for_service(std::chrono::seconds(1))) {
-      if (!rclcpp::ok()) {
-        RCLCPP_ERROR(this->get_logger(),
-                     "Interrupted while waiting for the service. Exiting.");
-        return;
-      }
-      RCLCPP_INFO(this->get_logger(), "Waiting for service to be available...");
+public:
+    TfSubscriberNode() : Node("tf_subscriber") {
+        // Initialize the TF buffer and listener
+        tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+        tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+        // Create a timer to periodically check for the transform
+        timer_ = this->create_wall_timer(
+            std::chrono::milliseconds(500),
+            std::bind(&TfSubscriberNode::check_transform, this)
+        );
     }
 
-    RCLCPP_INFO(this->get_logger(), "Subscriber node initialized");
+    /**
+     * @brief Function to check and print the transform between /world and /talk if available
+     */
+    void check_transform() {
+        // Check if the transform exists between /world and /talk
+        if (tf_buffer_->canTransform("world", "talk", tf2::TimePointZero)) {
+            try {
+                // Lookup the transform
+                geometry_msgs::msg::TransformStamped transformStamped;
+                transformStamped = tf_buffer_->lookupTransform("world", "talk", tf2::TimePointZero);
 
-    // Get parameter after node initialization
-    this->declare_parameter<std::string>("new_message", "");
+                // Get translation and rotation
+                double x = transformStamped.transform.translation.x;
+                double y = transformStamped.transform.translation.y;
+                double z = transformStamped.transform.translation.z;
 
-    // Retrieve the parameter after node is initialized
-    std::string new_message = this->get_parameter("new_message").as_string();
+                double qx = transformStamped.transform.rotation.x;
+                double qy = transformStamped.transform.rotation.y;
+                double qz = transformStamped.transform.rotation.z;
+                double qw = transformStamped.transform.rotation.w;
 
-    // If a new message is provided, send it to the publisher's service
-    if (!new_message.empty()) {
-      send_service_request(new_message);
+                // Print the translation and rotation
+                RCLCPP_INFO(this->get_logger(), "Received transform: x=%f, y=%f, z=%f, qx=%f, qy=%f, qz=%f, qw=%f",
+                            x, y, z, qx, qy, qz, qw);
+
+            } catch (tf2::TransformException &ex) {
+                RCLCPP_WARN(this->get_logger(), "Could not transform /world to /talk: %s", ex.what());
+            }
+        }
     }
-  }
-
- private:
-  /**
-   * @brief Callback function for processing received messages
-   * @param msg The received string message
-   */
-  void message_callback(const std_msgs::msg::String::SharedPtr msg) {
-    RCLCPP_INFO_STREAM(this->get_logger(), "Received message: " << msg->data);
-  }
-
-  /**
-   * @brief Sends a service request to change the message in the publisher
-   * @param new_message The new message to set in the publisher
-   */
-  void send_service_request(const std::string& new_message) {
-    auto request = std::make_shared<
-        beginner_tutorials::srv::ChangeOutputString::Request>();
-    request->new_string = new_message;
-
-    // Call the service asynchronously
-    auto future_result = client_->async_send_request(request);
-
-    // Print output message if new message is set
-    if (new_message.empty()) {
-      RCLCPP_WARN_STREAM(this->get_logger(), "New message not set");
-    } else {
-      RCLCPP_INFO_STREAM(this->get_logger(),
-                         "New message set: " << new_message);
-    }
-  }
-
-  /**
-   * @brief ROS2 subscription handle for the topic
-   *
-   */
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
-
-  /**
-   * @brief Client for the service to change the message
-   *
-   */
-  rclcpp::Client<beginner_tutorials::srv::ChangeOutputString>::SharedPtr
-      client_;
 };
 
-/**
- * @brief Main function to initialize and run the subscriber node
- * @param argc Number of command line arguments
- * @param argv Command line arguments
- * @return Exit status
- */
-int main(int argc, char* argv[]) {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<SubscriberNode>());
-  rclcpp::shutdown();
-  return 0;
+int main(int argc, char **argv) {
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<TfSubscriberNode>());
+    rclcpp::shutdown();
+    return 0;
 }
