@@ -1,0 +1,61 @@
+UpdateCTestConfiguration  from :/home/apoorv/my_beginner_tutorials/build/beginner_tutorials/CTestConfiguration.ini
+Parse Config file:/home/apoorv/my_beginner_tutorials/build/beginner_tutorials/CTestConfiguration.ini
+   Site: pop-os
+   Build name: (empty)
+ Add coverage exclude regular expressions.
+Create new tag: 20241114-2315 - Experimental
+UpdateCTestConfiguration  from :/home/apoorv/my_beginner_tutorials/build/beginner_tutorials/CTestConfiguration.ini
+Parse Config file:/home/apoorv/my_beginner_tutorials/build/beginner_tutorials/CTestConfiguration.ini
+Test project /home/apoorv/my_beginner_tutorials/build/beginner_tutorials
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+    Start 1: Verify TF Transform
+
+1: Test command: /home/apoorv/my_beginner_tutorials/build/beginner_tutorials/beginner_tutorials_tutorial_test "Verify TF Transform"
+1: Test timeout computed to be: 10000000
+1: Filters: Verify TF Transform
+1: Starting TF Transform Test
+1: [INFO] [1731626105.391979047] [tf_test_node]: Test Node Constructor Initialized
+1: [INFO] [1731626106.647954286] [tf_test_node]: Transform received successfully
+1: ROS Shutdown Completed
+1: ===============================================================================
+1: All tests passed (9 assertions in 1 test case)
+1: 
+1/3 Test #1: Verify TF Transform ..............   Passed    1.40 sec
+test 2
+    Start 2: cppcheck
+
+2: Test command: /home/apoorv/miniconda3/envs/slam_env/bin/python3 "-u" "/opt/ros/humble/share/ament_cmake_test/cmake/run_test.py" "/home/apoorv/my_beginner_tutorials/build/beginner_tutorials/test_results/beginner_tutorials/cppcheck.xunit.xml" "--package-name" "beginner_tutorials" "--output-file" "/home/apoorv/my_beginner_tutorials/build/beginner_tutorials/ament_cppcheck/cppcheck.txt" "--command" "/opt/ros/humble/bin/ament_cppcheck" "--xunit-file" "/home/apoorv/my_beginner_tutorials/build/beginner_tutorials/test_results/beginner_tutorials/cppcheck.xunit.xml"
+2: Test timeout computed to be: 300
+2: -- run_test.py: invoking following command in '/home/apoorv/my_beginner_tutorials/src/beginner_tutorials':
+2:  - /opt/ros/humble/bin/ament_cppcheck --xunit-file /home/apoorv/my_beginner_tutorials/build/beginner_tutorials/test_results/beginner_tutorials/cppcheck.xunit.xml
+2: cppcheck 2.7 has known performance issues and therefore will not be used, set the AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS environment variable to override this.
+2: -- run_test.py: return code 0
+2: -- run_test.py: verify result file '/home/apoorv/my_beginner_tutorials/build/beginner_tutorials/test_results/beginner_tutorials/cppcheck.xunit.xml'
+2/3 Test #2: cppcheck .........................   Passed    0.13 sec
+test 3
+    Start 3: pep257
+
+3: Test command: /home/apoorv/miniconda3/envs/slam_env/bin/python3 "-u" "/opt/ros/humble/share/ament_cmake_test/cmake/run_test.py" "/home/apoorv/my_beginner_tutorials/build/beginner_tutorials/test_results/beginner_tutorials/pep257.xunit.xml" "--package-name" "beginner_tutorials" "--output-file" "/home/apoorv/my_beginner_tutorials/build/beginner_tutorials/ament_pep257/pep257.txt" "--command" "/opt/ros/humble/bin/ament_pep257" "--xunit-file" "/home/apoorv/my_beginner_tutorials/build/beginner_tutorials/test_results/beginner_tutorials/pep257.xunit.xml"
+3: Test timeout computed to be: 60
+3: -- run_test.py: invoking following command in '/home/apoorv/my_beginner_tutorials/src/beginner_tutorials':
+3:  - /opt/ros/humble/bin/ament_pep257 --xunit-file /home/apoorv/my_beginner_tutorials/build/beginner_tutorials/test_results/beginner_tutorials/pep257.xunit.xml
+3: checking ./launch/publisher_subscriber.launch.py
+3: No problems found
+3: -- run_test.py: return code 0
+3: -- run_test.py: verify result file '/home/apoorv/my_beginner_tutorials/build/beginner_tutorials/test_results/beginner_tutorials/pep257.xunit.xml'
+3/3 Test #3: pep257 ...........................   Passed    0.11 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Label Time Summary:
+cppcheck    =   0.13 sec*proc (1 test)
+linter      =   0.25 sec*proc (2 tests)
+pep257      =   0.11 sec*proc (1 test)
+
+Total Test time (real) =   1.65 sec

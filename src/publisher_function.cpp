@@ -1,12 +1,31 @@
 /**
  * @file publisher_function.cpp
  * @author Apoorv Thapliyal
- * @brief C++ file for the ROS2 publisher node with a service to change the
- * published message
+ * @brief C++ file for the ROS2 node to broadcast a tf frame called /talk with
+ * parent /world
  * @version 0.1
- * @date 2024-11-07
+ * @date 2024-13-07
  *
  * @copyright Copyright (c) 2024
+ * @license MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 #include <chrono>
@@ -17,128 +36,80 @@
 #include <std_msgs/msg/string.hpp>
 #include <string>
 
-#include "beginner_tutorials/srv/change_output_string.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_broadcaster.h"
 
 /**
- * @brief Simple ROS2 node that publishes messages at a specified frequency
+ * @brief Simple ROS2 node
  *
  */
 class MessagePublisherNode : public rclcpp::Node {
- public:
+ private:
   /**
-   * @brief Constructor for the MessagePublisherNode
+   * @brief tf broadcaster for the static tf frame
    *
    */
-  MessagePublisherNode() : Node("message_publisher"), message_count_(0) {
-    // Declare the parameter with a default value, without using `as_int()` yet
-    this->declare_parameter<int>("publish_frequency", 500);
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_static_broadcaster_;
 
-    // Retrieve the parameter value, using 500 as a fallback if it's not set
-    int publish_frequency;
-    this->get_parameter_or("publish_frequency", publish_frequency, 500);
+  /**
+   * @brief Timer for the tf broadcast
+   *
+   */
+  rclcpp::TimerBase::SharedPtr timer_;
 
-    // Fatal check for negative frequency
-    if (publish_frequency < 0) {
-      RCLCPP_FATAL_STREAM(this->get_logger(),
-                          "Fatal error: Publish frequency cannot be negative");
-      rclcpp::shutdown();
-      std::exit(EXIT_FAILURE);
-    }
+ public:
+  MessagePublisherNode() : Node("tf_publisher") {
+    // Set the tf broadcaster
+    tf_static_broadcaster_ =
+        std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
-    // Set default message
-    this->current_message_.data = "Apoorv Thapliyal";
-
-    // Create publisher
-    message_publisher_ =
-        this->create_publisher<std_msgs::msg::String>("topic", 10);
-
-    // Create service
-    message_service_ =
-        this->create_service<beginner_tutorials::srv::ChangeOutputString>(
-            "change_string",
-            std::bind(&MessagePublisherNode::handle_message_change, this,
-                      std::placeholders::_1, std::placeholders::_2));
-
-    // Check if default frequency is being used
-    if (publish_frequency == 500) {
-      RCLCPP_WARN_STREAM(
-          this->get_logger(),
-          "Publisher frequency is not changed: " << publish_frequency);
-    }
-
-    // Create timer for publishing
-    publish_timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(publish_frequency),
+    // Set the timer for the tf broadcast
+    timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(500),
         std::bind(&MessagePublisherNode::publish_message, this));
   }
 
- private:
   /**
-   * @brief Callback function for the publishing timer
-   * @details Publishes the current message at the specified frequency
+   * @brief Function to broadcast the tf frame
    */
   void publish_message() {
-    auto message = this->current_message_;
-    RCLCPP_INFO_STREAM(this->get_logger(), "Publishing: " << message.data);
-    message_publisher_->publish(message);
+    // Create a transform message
+    geometry_msgs::msg::TransformStamped t;
+
+    // Set header
+    t.header.stamp = this->get_clock()->now();
+
+    // Set frame ID
+    t.header.frame_id = "world";
+
+    // Set child frame ID
+    t.child_frame_id = "talk";
+
+    // Define the translation and quaternion
+    double x = 1.0, y = 1.0, z = 1.0;
+    double qx = 0.5, qy = 0.5, qz = 0.5, qw = 0.5;
+
+    // Set translation (static)
+    t.transform.translation.x = x;
+    t.transform.translation.y = y;
+    t.transform.translation.z = z;
+
+    // Set rotation (static)
+    t.transform.rotation.x = qx;
+    t.transform.rotation.y = qy;
+    t.transform.rotation.z = qz;
+    t.transform.rotation.w = qw;
+
+    // Broadcast the transform
+    tf_static_broadcaster_->sendTransform(t);
+
+    RCLCPP_INFO(this->get_logger(),
+                "Broadcasted the tf frame: (x, y, z) = (%f, %f, %f) and (qx, "
+                "qy, qz, qw) = (%f, %f, %f, %f)",
+                x, y, z, qx, qy, qz, qw);
   }
-
-  /**
-   * @brief Service callback to modify the published message
-   * @param request The service request containing the new message
-   * @param response The service response confirming the change
-   */
-  void handle_message_change(
-      const std::shared_ptr<
-          beginner_tutorials::srv::ChangeOutputString::Request>
-          request,
-      std::shared_ptr<beginner_tutorials::srv::ChangeOutputString::Response>
-          response) {
-    if (request->new_string.empty()) {
-      RCLCPP_ERROR_STREAM(this->get_logger(),
-                          "Received empty message in service request. Keeping "
-                          "current message.");
-      response->output =
-          this->current_message_.data;  // Keep the current message as response
-    } else {
-      this->current_message_.data = request->new_string;
-      response->output = request->new_string;
-      RCLCPP_DEBUG_STREAM(this->get_logger(),
-                          "Received Service Request: " << request->new_string);
-    }
-  }
-
-  /**
-   * @brief Current message to publish
-   *
-   */
-  std_msgs::msg::String current_message_;
-
-  /**
-   * @brief Timer for publishing
-   *
-   */
-  rclcpp::TimerBase::SharedPtr publish_timer_;
-
-  /**
-   * @brief Message publisher
-   *
-   */
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr message_publisher_;
-
-  /**
-   * @brief Service to change message
-   *
-   */
-  rclcpp::Service<beginner_tutorials::srv::ChangeOutputString>::SharedPtr
-      message_service_;
-
-  /**
-   * @brief Message counter
-   *
-   */
-  size_t message_count_;
 };
 
 /**

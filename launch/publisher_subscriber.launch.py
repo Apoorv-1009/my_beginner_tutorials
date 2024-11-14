@@ -1,36 +1,41 @@
-import launch
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, LogInfo
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch.actions import ExecuteProcess
+import os
+from ament_index_python.packages import get_package_share_directory
+
+def launch_setup(context, *args, **kwargs):
+    # Get the package share directory
+    package_dir = get_package_share_directory('beginner_tutorials')
+
+    # Read the launch argument for recording
+    record_topics = LaunchConfiguration('record_topics').perform(context)
+
+    # Create the node
+    talker_node = Node(
+        package='beginner_tutorials',
+        executable='talker',
+        name='talker'
+    )
+
+    # Create the bag recorder if recording is enabled
+    if record_topics == 'true':
+        bag_recorder = ExecuteProcess(
+            cmd=['ros2', 'bag', 'record', '--all', '-o', 'recorded_topics'],
+            output='screen'
+        )
+        return [talker_node, bag_recorder]
+    else:
+        return [talker_node]
 
 def generate_launch_description():
     return LaunchDescription([
-        # Declare the launch arguments for setting the parameters
-        DeclareLaunchArgument('publish_frequency', default_value='500', description='Publish frequency for the publisher node (in ms)'),
-        DeclareLaunchArgument('new_message', default_value='', description='New message to be set by the subscriber'),
-
-        # Launch the publisher node
-        Node(
-            package='beginner_tutorials',
-            executable='talker',
-            name='publisher_node',
-            output='screen',
-            parameters=[{
-                'publish_frequency': LaunchConfiguration('publish_frequency')
-            }],
-            remappings=[('topic', 'topic')]  # You can adjust topic names if needed
+        DeclareLaunchArgument(
+            'record_topics',
+            default_value='true',
+            description='Enable/Disable recording of all topics'
         ),
-
-        # Launch the subscriber node
-        Node(
-            package='beginner_tutorials',
-            executable='listener',
-            name='subscriber_node',
-            output='screen',
-            parameters=[{
-                'new_message': LaunchConfiguration('new_message')
-            }],
-            remappings=[('topic', 'topic')]  # You can adjust topic names if needed
-        ),
+        OpaqueFunction(function=launch_setup)
     ])
