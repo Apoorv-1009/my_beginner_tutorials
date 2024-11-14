@@ -64,20 +64,16 @@ source ./install/setup.bash
 
 ### Running the Nodes
 
-Make sure to checkout into the `ros_services_logging_launch` branch:
+Make sure to checkout into the `ros_tf2_unitTest_bagFiles*` branch:
 ```bash
 cd ~/my_beginner_tutorials/src/beginner_tutorials/
-git checkout ros_services_logging_launch
+git checkout ros_tf2_unitTest_bagFiles
 ```
 
 To start the publisher, open a terminal and run the following command:
 
 ```bash
 ros2 run beginner_tutorials talker
-```
-The publisher contains the service, you can alter the publish frequency with the following command:
-```bash
-ros2 run beginner_tutorials talker --ros-args -p publish_frequency:=100
 ```
 </br>
 
