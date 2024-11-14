@@ -4,7 +4,7 @@
 
 This repository features the publisher-subscriber package developed for the ROS 2 beginner tutorials as part of the ENPM700 course. This project was created by **Apoorv Thapliyal** for the course *ENPM700: Software Development for Robotics* at the University of Maryland.
 
-### Project Dependencies
+## Project Dependencies
 This package relies on the ROS Humble Hawksbill distribution. Please ensure it is installed beforehand.  
 You can find the installation instructions [here](https://docs.ros.org/en/humble/Installation.html).
 Ensure to have empy==3.34 package installed:
@@ -12,7 +12,7 @@ Ensure to have empy==3.34 package installed:
 pip install empy==3.3.4
 ```
 
-### Building the Project
+## Building the Project
 
 First, you need to source the ROS 2 setup script to configure your environment:
 
@@ -62,7 +62,7 @@ After a successful build, source the package to make the executables available:
 source ./install/setup.bash
 ```
 
-### Running the Nodes
+## Running the Nodes
 
 Make sure to checkout into the `ros_tf2_unitTest_bagFiles` branch:
 ```bash
@@ -75,7 +75,7 @@ To start the publisher, open a terminal and run the following command:
 ros2 run beginner_tutorials talker
 ```
 
-### Running the Launch file
+## Running the Launch file
 To start the talker and record a ros2 bag file of the transforms being published:
 ```bash
 ros2 launch beginner_tutorials publisher_subscriber.launch.py
@@ -86,7 +86,7 @@ To not record the topics, but run the launch file:
 ros2 launch beginner_tutorials publisher_subscriber.launch.py record_topics:=False
 ```
 
-### Viewing the tf tree
+## Viewing the tf tree
 After launching the publisher, you can get the transform between `/world` and `/talk` with:
 ```bash
 ros2 run tf2_ros tf2_echo world talk
@@ -113,7 +113,7 @@ ros2 run beginner_tutorials listener
 ```
 The listener would print the frames being published
 
-### Testing
+## Testing
 To run the colcon test:
 ```bash
 colcon test --packages-select beginner_tutorials
@@ -123,7 +123,7 @@ To view the test logs:
 cat log/latest_test/beginner_tutorials/stdout_stderr.log > src/beginner_tutorials/results/catch2_tests_output.txt
 ```
 
-### Style Check Guidelines
+## Style Check Guidelines
 
 To maintain code quality, you can perform style checks using cppcheck and cpplint. First, navigate to the package directory:
 
