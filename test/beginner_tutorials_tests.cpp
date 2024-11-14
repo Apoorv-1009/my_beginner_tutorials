@@ -27,7 +27,8 @@
  * THE SOFTWARE.
  */
 
-#include <gtest/gtest.h>
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
 #include <stdlib.h>
 
 #include <rclcpp/rclcpp.hpp>
@@ -36,102 +37,93 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 
 /**
- * @brief Testing fixture for the level 2 ROS Node Test
- *
+ * @brief Class to handle ROS2 node setup and cleanup for tests
  */
-class TfPublisherTestFixture : public testing::Test {
-    public:
-    TfPublisherTestFixture() : node_(std::make_shared<rclcpp::Node>("tf_test_node")) {
+class TfPublisherTestHelper {
+public:
+    TfPublisherTestHelper() : node_(std::make_shared<rclcpp::Node>("tf_test_node")) {
         RCLCPP_INFO_STREAM(node_->get_logger(), "Test Node Constructor Initialized");
-    }
-
-    void SetUp() override {
-        bool retVal = StartROSExec("beginner_tutorials", "tf_publisher", "talker");
-        ASSERT_TRUE(retVal);
         tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
         tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-        RCLCPP_INFO_STREAM(node_->get_logger(), "Test Setup Completed");
     }
 
-    void TearDown() override {
-        bool retVal = StopROSExec();
-        ASSERT_TRUE(retVal);
-        std::cout << "Teardown Completed" << std::endl;
+    bool StartROSExec(const char* pkg_name, const char* node_name, const char* exec_name) {
+        // Build command strings
+        cmd_ss << "ros2 run " << pkg_name << " " << exec_name << " > /dev/null 2> /dev/null &";
+        cmdInfo_ss << "ros2 node info "
+                    << "/" << node_name << " > /dev/null 2> /dev/null";
+        char execName[16];
+        snprintf(execName, sizeof(execName), "%s", exec_name);  // pkill uses exec name <= 15 char only
+        killCmd_ss << "pkill --signal SIGINT " << execName << " > /dev/null 2> /dev/null";
+
+        // Kill any existing instances of the node
+        StopROSExec();
+
+        // Start the ROS 2 node and wait for it to become active
+        int retVal = system(cmd_ss.str().c_str());
+        if (retVal != 0) return false;
+
+        retVal = -1;
+        while (retVal != 0) {
+            retVal = system(cmdInfo_ss.str().c_str());
+            sleep(1);
+        }
+        return true;
     }
 
-    protected:
-        rclcpp::Node::SharedPtr node_;
-        std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-        std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-        std::stringstream cmd_ss, cmdInfo_ss, killCmd_ss;
+    bool StopROSExec() {
+        if (killCmd_ss.str().empty()) return true;
+        int retVal = system(killCmd_ss.str().c_str());
+        return retVal == 0;
+    }
 
-        bool StartROSExec(const char* pkg_name, const char* node_name, const char* exec_name) {
-            // Build command strings
-            cmd_ss << "ros2 run " << pkg_name << " " << exec_name << " > /dev/null 2> /dev/null &";
-            cmdInfo_ss << "ros2 node info "
-                        << "/" << node_name << " > /dev/null 2> /dev/null";
-            char execName[16];
-            snprintf(execName, sizeof(execName), "%s", exec_name);  // pkill uses exec name <= 15 char only
-            killCmd_ss << "pkill --signal SIGINT " << execName << " > /dev/null 2> /dev/null";
+    rclcpp::Node::SharedPtr node_;
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-            // Kill any existing instances of the node
-            StopROSExec();
-
-            // Start the ROS 2 node and wait for it to become active
-            int retVal = system(cmd_ss.str().c_str());
-            if (retVal != 0) return false;
-
-            retVal = -1;
-            while (retVal != 0) {
-                retVal = system(cmdInfo_ss.str().c_str());
-                sleep(1);
-            }
-            return true;
-        }
-
-        bool StopROSExec() {
-            if (killCmd_ss.str().empty()) return true;
-            int retVal = system(killCmd_ss.str().c_str());
-            return retVal == 0;
-        }
+private:
+    std::stringstream cmd_ss, cmdInfo_ss, killCmd_ss;
 };
 
-/**
- * @brief Test case to verify the TF transform broadcast by the node
- */
-TEST_F(TfPublisherTestFixture, VerifyTfTransform) {
+// Initialize ROS before all tests
+struct RosTestsFixture {
+    RosTestsFixture() {
+        rclcpp::init(0, nullptr);
+    }
+    ~RosTestsFixture() {
+        rclcpp::shutdown();
+        std::cout << "ROS Shutdown Completed" << std::endl;
+    }
+};
+
+TEST_CASE_METHOD(RosTestsFixture, "Verify TF Transform", "[tf]") {
     std::cout << "Starting TF Transform Test" << std::endl;
+    
+    TfPublisherTestHelper helper;
+    
+    REQUIRE(helper.StartROSExec("beginner_tutorials", "tf_publisher", "talker"));
 
     // Wait for the transform to be published
     geometry_msgs::msg::TransformStamped transform;
     try {
-        transform = tf_buffer_->lookupTransform("world", "talk", tf2::TimePointZero, tf2::durationFromSec(2.0));
-        RCLCPP_INFO_STREAM(node_->get_logger(), "Transform received successfully");
+        transform = helper.tf_buffer_->lookupTransform(
+            "world", "talk", tf2::TimePointZero, tf2::durationFromSec(2.0));
+        RCLCPP_INFO_STREAM(helper.node_->get_logger(), "Transform received successfully");
     } catch (const tf2::TransformException& ex) {
-        RCLCPP_ERROR_STREAM(node_->get_logger(), "Transform Exception: " << ex.what());
-        FAIL() << "Failed to receive transform";
+        RCLCPP_ERROR_STREAM(helper.node_->get_logger(), "Transform Exception: " << ex.what());
+        FAIL("Failed to receive transform");
     }
 
     // Verify the translation
-    EXPECT_DOUBLE_EQ(transform.transform.translation.x, 1.0);
-    EXPECT_DOUBLE_EQ(transform.transform.translation.y, 1.0);
-    EXPECT_DOUBLE_EQ(transform.transform.translation.z, 1.0);
+    CHECK(transform.transform.translation.x == Approx(1.0));
+    CHECK(transform.transform.translation.y == Approx(1.0));
+    CHECK(transform.transform.translation.z == Approx(1.0));
 
     // Verify the rotation
-    EXPECT_DOUBLE_EQ(transform.transform.rotation.x, 0.5);
-    EXPECT_DOUBLE_EQ(transform.transform.rotation.y, 0.5);
-    EXPECT_DOUBLE_EQ(transform.transform.rotation.z, 0.5);
-    EXPECT_DOUBLE_EQ(transform.transform.rotation.w, 0.5);
-}
+    CHECK(transform.transform.rotation.x == Approx(0.5));
+    CHECK(transform.transform.rotation.y == Approx(0.5));
+    CHECK(transform.transform.rotation.z == Approx(0.5));
+    CHECK(transform.transform.rotation.w == Approx(0.5));
 
-/**
- * @brief Main function to initialize and run the tests
- */
-int main(int argc, char** argv) {
-    rclcpp::init(argc, argv);
-    ::testing::InitGoogleTest(&argc, argv);
-    int result = RUN_ALL_TESTS();
-    rclcpp::shutdown();
-    std::cout << "ROS Shutdown Completed" << std::endl;
-    return result;
+    REQUIRE(helper.StopROSExec());
 }

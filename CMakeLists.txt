@@ -50,7 +50,7 @@ install(TARGETS
 install(DIRECTORY launch/
   DESTINATION share/${PROJECT_NAME})
 
-if(BUILD_TESTING)
+  if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)
@@ -59,17 +59,35 @@ if(BUILD_TESTING)
   set(ament_cmake_lint_cmake_FOUND TRUE)
   set(ament_cmake_xmllint_FOUND TRUE)
 
-  find_package(ament_cmake_gtest REQUIRED)
+  # Find Catch2
+  find_package(Catch2 REQUIRED)
 
-  ament_add_gtest(${PROJECT_NAME}_tutorial_test test/beginner_tutorials_tests.cpp)
+  # Add the test executable
+  add_executable(${PROJECT_NAME}_tutorial_test test/beginner_tutorials_tests.cpp)
+
+  # Link dependencies
   ament_lint_auto_find_test_dependencies()
-  # ament_target_dependencies(${PROJECT_NAME}_tutorial_test rclcpp)
-  ament_target_dependencies(${PROJECT_NAME}_tutorial_test rclcpp tf2 tf2_ros geometry_msgs)
+  ament_target_dependencies(${PROJECT_NAME}_tutorial_test 
+    rclcpp 
+    tf2 
+    tf2_ros 
+    geometry_msgs
+  )
+  
+  # Export the dependencies
   ament_export_dependencies(rosidl_default_runtime)
-
+  
+  # Get and link the typesupport
   rosidl_get_typesupport_target(cpp_typesupport_target
     ${PROJECT_NAME} rosidl_typesupport_cpp)
-  target_link_libraries(${PROJECT_NAME}_tutorial_test "${cpp_typesupport_target}")
+  target_link_libraries(${PROJECT_NAME}_tutorial_test 
+    "${cpp_typesupport_target}"
+    Catch2::Catch2
+  )
+
+  # Enable test discovery
+  include(Catch)
+  catch_discover_tests(${PROJECT_NAME}_tutorial_test)
 endif()
 
 ament_package()
