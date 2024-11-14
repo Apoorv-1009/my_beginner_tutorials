@@ -81,23 +81,34 @@ Then, in a new terminal (make sure to source ROS2 and the workspace setup again)
 ```bash
 ros2 run beginner_tutorials listener
 ```
-To change the output string of the `talker`, you can run the following command:
-```bash
-ros2 run beginner_tutorials listener --ros-args -p new_message:="Hi"
-```
 
 ### Running the Launch file
-To start the talker and listener nodes directly, you can run the following command with an editable publish frequency and message:
+To start the talker and record a ros2 bag file of the transforms being published:
 ```bash
-ros2 launch beginner_tutorials publisher_subscriber.launch.py publish_frequency:=100 new_message:="Hello, Publisher"
+ros2 launch beginner_tutorials publisher_subscriber.launch.py
+```
+The bag file would be saved as `recorded_topics` </br>
+To not record the topics, but run the launch file:
+```bash
+ros2 launch beginner_tutorials publisher_subscriber.launch.py record_topics:=False
 ```
 
-### Viewing the logger levels
-After running the nodes, you can view the logger levels with this command:
+### Viewing the tf tree
+After launching the publisher, you can get the transform between `/world` and `/talk` with:
 ```bash
-ros2 run rqt_console rqt_console
+ros2 run tf2_ros tf2_echo world talk
 ```
-A sample output screenshot has been provided under `/docs`
+To see the tf tree:
+```bash
+ros2 run tf2_tools view_frames
+```
+This would save a `frames.pdf` in the directory where it was run. A sample output has been provided under results.
+
+### ROS2 Bag file 
+To verify the topic messages of the recorded bag file, you can get its output with:
+```bash
+ros2 bag info recorded_topics
+```
 
 ### Style Check Guidelines
 
