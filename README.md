@@ -127,3 +127,8 @@ You can save the output with:
 ```bash
 echo $? > results/clangtidy_output.txt
 ```
+
+To directly format the code to Google style C++:
+```bash
+clang-format -style=Google -i src/*.cpp
+```

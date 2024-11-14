@@ -1,7 +1,8 @@
 /**
  * @file publisher_function.cpp
  * @author Apoorv Thapliyal
- * @brief C++ file for the ROS2 node to broadcast a tf frame called /talk with parent /world
+ * @brief C++ file for the ROS2 node to broadcast a tf frame called /talk with
+ * parent /world
  * @version 0.1
  * @date 2024-13-07
  *
@@ -35,82 +36,80 @@
 #include <std_msgs/msg/string.hpp>
 #include <string>
 
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_broadcaster.h"
-#include "geometry_msgs/msg/transform_stamped.hpp"
 
 /**
- * @brief Simple ROS2 node 
+ * @brief Simple ROS2 node
  *
  */
 class MessagePublisherNode : public rclcpp::Node {
+ private:
+  /**
+   * @brief tf broadcaster for the static tf frame
+   *
+   */
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_static_broadcaster_;
 
-  private:
-    /**
-     * @brief tf broadcaster for the static tf frame
-     * 
-     */
-    std::shared_ptr<tf2_ros::TransformBroadcaster> tf_static_broadcaster_;
+  /**
+   * @brief Timer for the tf broadcast
+   *
+   */
+  rclcpp::TimerBase::SharedPtr timer_;
 
-    /**
-     * @brief Timer for the tf broadcast
-     * 
-     */
-    rclcpp::TimerBase::SharedPtr timer_;
-
-
-  public:
-    MessagePublisherNode() : Node("tf_publisher"){
-    
+ public:
+  MessagePublisherNode() : Node("tf_publisher") {
     // Set the tf broadcaster
-    tf_static_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+    tf_static_broadcaster_ =
+        std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
     // Set the timer for the tf broadcast
-    timer_ = this->create_wall_timer(std::chrono::milliseconds(500), std::bind(&MessagePublisherNode::publish_message, this));
-    
-    }
+    timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(500),
+        std::bind(&MessagePublisherNode::publish_message, this));
+  }
 
-    /**
-     * @brief Function to broadcast the tf frame
-     */
-     void publish_message() {
+  /**
+   * @brief Function to broadcast the tf frame
+   */
+  void publish_message() {
+    // Create a transform message
+    geometry_msgs::msg::TransformStamped t;
 
-      // Create a transform message
-      geometry_msgs::msg::TransformStamped t;
+    // Set header
+    t.header.stamp = this->get_clock()->now();
 
-      // Set header
-      t.header.stamp = this->get_clock()->now();
+    // Set frame ID
+    t.header.frame_id = "world";
 
-      // Set frame ID
-      t.header.frame_id = "world";
+    // Set child frame ID
+    t.child_frame_id = "talk";
 
-      // Set child frame ID
-      t.child_frame_id = "talk";
+    // Define the translation and quaternion
+    double x = 1.0, y = 1.0, z = 1.0;
+    double qx = 0.5, qy = 0.5, qz = 0.5, qw = 0.5;
 
-      // Define the translation and quaternion
-      double x = 1.0, y = 1.0, z = 1.0;
-      double qx = 0.5, qy = 0.5, qz = 0.5, qw = 0.5;
+    // Set translation (static)
+    t.transform.translation.x = x;
+    t.transform.translation.y = y;
+    t.transform.translation.z = z;
 
-      // Set translation (static)
-      t.transform.translation.x = x;
-      t.transform.translation.y = y;
-      t.transform.translation.z = z;
+    // Set rotation (static)
+    t.transform.rotation.x = qx;
+    t.transform.rotation.y = qy;
+    t.transform.rotation.z = qz;
+    t.transform.rotation.w = qw;
 
-      // Set rotation (static)
-      t.transform.rotation.x = qx;
-      t.transform.rotation.y = qy;
-      t.transform.rotation.z = qz;
-      t.transform.rotation.w = qw;
+    // Broadcast the transform
+    tf_static_broadcaster_->sendTransform(t);
 
-      // Broadcast the transform
-      tf_static_broadcaster_->sendTransform(t);
-
-      RCLCPP_INFO(this->get_logger(), "Broadcasted the tf frame: (x, y, z) = (%f, %f, %f) and (qx, qy, qz, qw) = (%f, %f, %f, %f)", x, y, z, qx, qy, qz, qw);
-
-     }
- 
+    RCLCPP_INFO(this->get_logger(),
+                "Broadcasted the tf frame: (x, y, z) = (%f, %f, %f) and (qx, "
+                "qy, qz, qw) = (%f, %f, %f, %f)",
+                x, y, z, qx, qy, qz, qw);
+  }
 };
 
 /**
