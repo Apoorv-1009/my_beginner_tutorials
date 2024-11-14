@@ -64,22 +64,15 @@ source ./install/setup.bash
 
 ### Running the Nodes
 
-Make sure to checkout into the `ros_tf2_unitTest_bagFiles*` branch:
+Make sure to checkout into the `ros_tf2_unitTest_bagFiles` branch:
 ```bash
 cd ~/my_beginner_tutorials/src/beginner_tutorials/
 git checkout ros_tf2_unitTest_bagFiles
+cd ../../
 ```
-
 To start the publisher, open a terminal and run the following command:
-
 ```bash
 ros2 run beginner_tutorials talker
-```
-</br>
-
-Then, in a new terminal (make sure to source ROS2 and the workspace setup again), start the subscriber with:
-```bash
-ros2 run beginner_tutorials listener
 ```
 
 ### Running the Launch file
@@ -110,6 +103,16 @@ To verify the topic messages of the recorded bag file, you can get its output wi
 ros2 bag info recorded_topics
 ```
 
+To run the bag file:
+```bash
+ros2 bag play recorded_topics
+```
+Then, in a new terminal (make sure to source ROS2 and the workspace setup again), start the subscriber with:
+```bash
+ros2 run beginner_tutorials listener
+```
+The listener would print the frames being published
+
 ### Testing
 To run the colcon test:
 ```bash
@@ -117,7 +120,7 @@ colcon test --packages-select beginner_tutorials
 ```
 To view the test logs:
 ```bash
-cat log/latest_test/beginner_tutorials/stdout_stderr.log
+cat log/latest_test/beginner_tutorials/stdout_stderr.log > src/beginner_tutorials/results/catch2_tests_output.txt
 ```
 
 ### Style Check Guidelines
