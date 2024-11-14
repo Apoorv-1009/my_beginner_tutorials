@@ -87,7 +87,7 @@ To start the talker and record a ros2 bag file of the transforms being published
 ```bash
 ros2 launch beginner_tutorials publisher_subscriber.launch.py
 ```
-The bag file would be saved as `recorded_topics` </br>
+The bag file would be saved as `recorded_topics` and can be found in the workspace directory where the command was run </br>
 To not record the topics, but run the launch file:
 ```bash
 ros2 launch beginner_tutorials publisher_subscriber.launch.py record_topics:=False
@@ -108,6 +108,16 @@ This would save a `frames.pdf` in the directory where it was run. A sample outpu
 To verify the topic messages of the recorded bag file, you can get its output with:
 ```bash
 ros2 bag info recorded_topics
+```
+
+### Testing
+To run the colcon test:
+```bash
+colcon test --packages-select beginner_tutorials
+```
+To view the test logs:
+```bash
+cat log/latest_test/beginner_tutorials/stdout_stderr.log
 ```
 
 ### Style Check Guidelines
