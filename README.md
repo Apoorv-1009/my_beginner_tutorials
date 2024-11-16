@@ -114,13 +114,100 @@ ros2 run beginner_tutorials listener
 The listener would print the frames being published
 
 ## Testing
-To run the colcon test:
+To test the `beginner_tutorials` package, we use `catch_ros2`. Install if necessary:
 ```bash
-colcon test --packages-select beginner_tutorials
+apt install ros-${ROS_DISTRO}-catch-ros2
 ```
-To view the test logs:
+
+Clone the `ros2_integration_test` in the `src/` directory, we will modify package to suit the `beginner_tutorials` package:
 ```bash
-cat log/latest_test/beginner_tutorials/stdout_stderr.log > src/beginner_tutorials/results/catch2_tests_output.txt
+cd ~/my_beginner_tutorials/src
+git clone git@github.com:TommyChangUMD/ros2_integration_test.git
+```
+
+Copy the `integration_test_node.cpp` in the `test/` directory and the `publisher_function.cpp` from the `src/`, into `src/` directory of `ros2_integration_test` we cloned earlier:
+```bash
+cp beginner_tutorials/test/integration_test_node.cpp ros2_integration_test/src
+cp beginner_tutorials/src/publisher_function.cpp ros2_integration_test/src 
+```
+
+Now we will modify the `ros2_integration_test` package:
+```bash
+cd ros2_integration_test
+```
+
+Edit the `launch/integration_test.launch.yaml` to launch the `talker` in `beginner_tutorials`:
+```bash
+################################################    
+# 3.) Auxiliary nodes (i.e, nodes under test) 
+################################################    
+- node:
+    pkg: 'integration_test'
+    exec: 'integration_test_node'     # This executable is built by this package (See CMakeLists.txt)
+
+- node:
+    pkg: 'beginner_tutorials'      # Note: this package is in beginner_tutorials
+    exec: 'talker'
+```
+
+Edit the `CMakeLists.txt` to add the `talker` executable:
+```bash
+# Add executables
+add_executable(talker src/publisher_function.cpp)
+ament_target_dependencies(talker rclcpp std_msgs tf2_ros geometry_msgs)
+```
+
+And add it to the install Targets:
+```bash
+install(TARGETS
+  integration_test_node
+  talker
+  DESTINATION lib/${PROJECT_NAME}
+  )
+```
+
+Update the package dependencies of `integration_test_node.cpp`:
+```bash
+###########################################################################
+# 1.) BUILD THE INTEGRATION TEST NODE (aka Node that performs the test)  ##
+###########################################################################
+# This is the node in which integration tests occur
+add_executable(integration_test_node
+  src/integration_test_node.cpp
+  )
+# The link libraries call this node with "catch_ros2::catch_ros2_with_node_main"
+# to get the default integration test node main function
+target_link_libraries(integration_test_node
+  catch_ros2::catch_ros2_with_node_main
+  )
+ament_target_dependencies(integration_test_node
+  rclcpp std_srvs std_msgs tf2 tf2_ros geometry_msgs
+  )
+```
+
+Update the `package.xml`:
+```bash
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+```
+
+Our `ros2_integration_test` package is now up to date. </br>
+To build the packages:
+```bash
+cd ~/my_beginner_tutorials/
+colcon build --packages-select integration_test
+```
+
+To run the tests:
+```bash
+ros2 launch integration_test integration_test.launch.yaml
+```
+You can save the results with:
+```bash
+cat log/latest_test/integration_test/stdout_stderr.log > src/beginner_tutorials/results/catch2_tests_output.txt 
 ```
 
 ## Style Check Guidelines
@@ -128,7 +215,7 @@ cat log/latest_test/beginner_tutorials/stdout_stderr.log > src/beginner_tutorial
 To maintain code quality, you can perform style checks using cppcheck and cpplint. First, navigate to the package directory:
 
 ```bash
-cd ~/ros_ws/src/beginner_tutorials
+cd ~/my_beginner_tutorials/src/beginner_tutorials
 ```
 
 Run cppcheck for code analysis:
